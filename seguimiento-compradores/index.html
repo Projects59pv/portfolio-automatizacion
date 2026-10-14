@@ -248,7 +248,7 @@ footer a{color:var(--gold)}
     var first=(c.name||"").split(" ")[0]||"";
     var agent=($("agent").value||"").trim();
     var firma=agent?"\n\n"+agent:"";
-    var prop=c.property||"el inmueble";
+    var prop=c.property?(/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]/.test(c.property)?c.property.charAt(0).toLowerCase()+c.property.slice(1):c.property):"el inmueble";
     switch(c.stage){
       case "Nuevo": return "Hola, "+first+". Te escribo por tu interés en "+prop+". ¿Te viene bien que hablemos hoy o mañana para contarte los detalles?"+firma;
       case "Contactado": return "Hola, "+first+". ¿Te apetece ver "+prop+" esta semana? Dime qué días te vienen mejor y te propongo dos horas."+firma;
