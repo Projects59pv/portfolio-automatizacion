@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Calculadora de horas del despacho</title>
+<meta name="description" content="Calcula con tus propios números cuántas horas y cuánto dinero dedica tu despacho a pedir y recordar documentos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: cabecera breve; formulario por bloques a la izquierda y panel de resultado fijo a la derecha (una columna en móvil). */
+:root{
+  --bg:#F5EFE6; --surface:#FFFDF9; --ink:#0A2540; --muted:#4F5D6E; --line:#E3D9C9;
+  --gold:#A07830; --gold-fill:#D4A853;
+  --panel:#0A2540; --panel-ink:#F5EFE6; --panel-muted:#B9C4D0; --panel-accent:#F5D485; --panel-line:#1E3B5C;
+  --focus:#D4A853;
+  --display:"Playfair Display", Georgia, "Times New Roman", serif;
+  --body:"EB Garamond", Garamond, Georgia, serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#071B30; --surface:#0D2640; --ink:#F5EFE6; --muted:#B9C4D0; --line:#1E3B5C;
+  --gold:#D4A853; --gold-fill:#D4A853;
+  --panel:#F5EFE6; --panel-ink:#0A2540; --panel-muted:#4F5D6E; --panel-accent:#A07830; --panel-line:#E3D9C9;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#071B30; --surface:#0D2640; --ink:#F5EFE6; --muted:#B9C4D0; --line:#1E3B5C;
+  --gold:#D4A853; --gold-fill:#D4A853;
+  --panel:#F5EFE6; --panel-ink:#0A2540; --panel-muted:#4F5D6E; --panel-accent:#A07830; --panel-line:#E3D9C9;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.125rem;line-height:1.55;margin:0}
+.wrap{max-width:68rem;margin:0 auto;padding-inline:clamp(16px,4vw,40px);padding-block:clamp(24px,5vw,56px)}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:600;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.brand svg{flex:none}
+header.hero{display:grid;gap:.9rem;max-width:44rem;margin-bottom:clamp(28px,5vw,48px)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,5.2vw,3.2rem);line-height:1.08;margin:0;text-wrap:balance}
+h1 em{font-weight:400;color:var(--gold)}
+.lede{margin:0;color:var(--muted);font-size:1.2rem;max-width:38rem}
+.lede strong{color:var(--ink);font-weight:600}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,25rem);gap:clamp(24px,4vw,48px);align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+form{display:grid;gap:clamp(20px,3vw,28px);min-width:0}
+fieldset{border:0;border-top:1px solid var(--line);margin:0;padding:1.1rem 0 0;display:grid;gap:1rem;min-width:0}
+legend{float:left;width:100%;padding:0;margin-bottom:.2rem;font-family:var(--display);font-size:1.3rem;font-weight:600}
+legend small{display:block;font-family:var(--body);font-size:.95rem;font-weight:400;color:var(--muted);margin-top:.15rem}
+.optional{font-family:var(--body);font-size:.75rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-left:.4rem;vertical-align:middle}
+.field{display:grid;grid-template-columns:minmax(0,1fr) 9.5rem;gap:.4rem 1rem;align-items:center}
+@media (max-width:480px){.field{grid-template-columns:minmax(0,1fr)}}
+.field label{font-weight:500;line-height:1.3}
+.field .hint{grid-column:1/-1;font-size:.95rem;color:var(--muted);margin-top:-.2rem;line-height:1.35}
+.input{display:flex;align-items:baseline;gap:.4rem;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.45rem .7rem}
+.input:focus-within{border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 30%,transparent)}
+.input input{all:unset;width:100%;min-width:0;font-family:var(--body);font-size:1.15rem;font-feature-settings:"lnum","tnum";text-align:right;color:var(--ink)}
+.input input::placeholder{color:var(--muted);opacity:.6}
+.input span{font-size:.9rem;color:var(--muted);white-space:nowrap}
+
+aside.result{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--panel);color:var(--panel-ink);border-radius:10px;padding:clamp(20px,3vw,28px);display:grid;gap:1.1rem;min-width:0}
+@media (max-width:860px){aside.result{position:static}}
+.result .k{font-size:.75rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--panel-accent)}
+.big{font-family:var(--display);font-weight:700;font-size:clamp(3rem,9vw,4.2rem);line-height:1;font-feature-settings:"lnum","tnum"}
+.big small{font-family:var(--body);font-weight:400;font-size:1.2rem;margin-left:.3rem}
+.sub{color:var(--panel-muted);margin:.2rem 0 0}
+dl{margin:0;display:grid;gap:0}
+.row{display:flex;justify-content:space-between;gap:1rem;padding:.55rem 0;border-top:1px solid var(--panel-line)}
+.row dt{color:var(--panel-muted);min-width:0}
+.row dd{margin:0;font-weight:600;font-feature-settings:"lnum","tnum";white-space:nowrap;text-align:right}
+.row.extra[hidden]{display:none}
+.empty{color:var(--panel-muted);font-style:italic;margin:0}
+.note{font-size:.9rem;color:var(--panel-muted);margin:0;line-height:1.4}
+
+.actions{display:grid;gap:.6rem}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:.5rem;font-family:var(--body);font-size:1.05rem;font-weight:600;border-radius:6px;padding:.75rem 1rem;cursor:pointer;text-decoration:none;border:1px solid transparent}
+.btn-primary{background:var(--gold-fill);color:#0A2540}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{background:transparent;color:var(--panel-ink);border-color:var(--panel-line)}
+.btn-ghost:hover{border-color:var(--panel-accent)}
+.btn:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.status{min-height:1.3em;font-size:.9rem;color:var(--panel-accent);margin:0}
+#copyText{width:100%;min-height:8rem;font:inherit;font-size:.9rem;background:transparent;color:var(--panel-ink);border:1px solid var(--panel-line);border-radius:6px;padding:.5rem}
+
+section.after{margin-top:clamp(40px,6vw,64px);border-top:1px solid var(--line);padding-top:clamp(24px,4vw,36px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:clamp(20px,3vw,36px)}
+section.after h2{font-family:var(--display);font-size:1.45rem;font-weight:600;margin:0 0 .4rem;text-wrap:balance}
+section.after p,section.after li{color:var(--muted);margin:0}
+section.after ul{margin:0;padding-left:1.1rem;display:grid;gap:.35rem}
+section.after strong{color:var(--ink);font-weight:600}
+
+footer{margin-top:clamp(36px,5vw,56px);padding-top:1rem;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1.5rem;font-size:.95rem;color:var(--muted)}
+footer a{color:var(--gold)}
+@media (prefers-reduced-motion:no-preference){.big{transition:color .2s}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="brand">
+      <svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><path d="M9 1 17 5.5v9L9 19 1 14.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      Demo de portfolio · Despachos de extranjería
+    </div>
+    <h1>¿Cuántas horas se le van a tu despacho en <em>pedir papeles</em>?</h1>
+    <p class="lede">Rellena los datos de un mes normal. El resultado se calcula al momento, con <strong>tus números</strong>. Si no sabes uno exacto, pon tu mejor estimación.</p>
+  </header>
+
+  <div class="grid">
+    <form id="calc" novalidate>
+      <fieldset>
+        <legend>Pedir y recordar documentos<small>Mensajes y llamadas que solo sirven para conseguir papeles.</small></legend>
+        <div class="field">
+          <label for="exp">Expedientes en curso este mes</label>
+          <div class="input"><input id="exp" inputmode="decimal" placeholder="0" aria-describedby="exp-h"><span>exp.</span></div>
+          <div class="hint" id="exp-h">De cualquier trámite: arraigo, reagrupación, TIE, nacionalidad…</div>
+        </div>
+        <div class="field">
+          <label for="msg">Mensajes al mes por expediente para pedir o recordar documentos</label>
+          <div class="input"><input id="msg" inputmode="decimal" placeholder="0"><span>mens.</span></div>
+          <div class="hint">WhatsApp, email o SMS: «¿me envías el pasaporte?», «falta el certificado».</div>
+        </div>
+        <div class="field">
+          <label for="minMsg">Minutos por mensaje</label>
+          <div class="input"><input id="minMsg" inputmode="decimal" placeholder="0"><span>min</span></div>
+          <div class="hint">Buscar el expediente, mirar qué falta, escribir y anotarlo.</div>
+        </div>
+        <div class="field">
+          <label for="calls">Llamadas al mes por expediente, solo por documentación</label>
+          <div class="input"><input id="calls" inputmode="decimal" placeholder="0"><span>llam.</span></div>
+        </div>
+        <div class="field">
+          <label for="minCall">Minutos por llamada</label>
+          <div class="input"><input id="minCall" inputmode="decimal" placeholder="0"><span>min</span></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Expedientes parados<small>Los que se quedan esperando un documento y descubres tarde.</small></legend>
+        <div class="field">
+          <label for="stuck">Expedientes que se paran al mes por falta de un documento</label>
+          <div class="input"><input id="stuck" inputmode="decimal" placeholder="0"><span>exp.</span></div>
+        </div>
+        <div class="field">
+          <label for="minStuck">Minutos para detectar y reactivar cada uno</label>
+          <div class="input"><input id="minStuck" inputmode="decimal" placeholder="0"><span>min</span></div>
+          <div class="hint">Revisar, avisar al cliente, reorganizar.</div>
+        </div>
+        <div class="field">
+          <label for="days">Días que suele pasar parado hasta que llega el documento</label>
+          <div class="input"><input id="days" inputmode="decimal" placeholder="0"><span>días</span></div>
+        </div>
+        <div class="field">
+          <label for="review">Horas a la semana repasando qué le falta a cada expediente</label>
+          <div class="input"><input id="review" inputmode="decimal" placeholder="0"><span>h/sem</span></div>
+          <div class="hint">Carpetas, hojas de cálculo o el programa del despacho.</div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Coste y capacidad</legend>
+        <div class="field">
+          <label for="rate">Coste por hora de quien hace este trabajo</label>
+          <div class="input"><input id="rate" inputmode="decimal" placeholder="0"><span>€/h</span></div>
+          <div class="hint">Salario más Seguridad Social, o lo que vale tu hora si lo haces tú.</div>
+        </div>
+        <div class="field">
+          <label for="hoursCase">Horas de trabajo que necesita un expediente de principio a fin <span class="optional">Opcional</span></label>
+          <div class="input"><input id="hoursCase" inputmode="decimal" placeholder="0"><span>h</span></div>
+          <div class="hint">Sirve para traducir el tiempo perdido en expedientes.</div>
+        </div>
+        <div class="field">
+          <label for="fee">Honorarios medios por expediente <span class="optional">Opcional</span></label>
+          <div class="input"><input id="fee" inputmode="decimal" placeholder="0"><span>€</span></div>
+          <div class="hint">Si cobras al presentar, es dinero que se retrasa mientras el expediente espera.</div>
+        </div>
+      </fieldset>
+    </form>
+
+    <aside class="result" aria-live="polite" aria-labelledby="res-k">
+      <div>
+        <div class="k" id="res-k">Tu resultado</div>
+        <div class="big" id="hoursMonth">—<small>h/mes</small></div>
+        <p class="sub" id="hoursSub">dedicadas a pedir, recordar y comprobar documentos</p>
+      </div>
+      <p class="empty" id="emptyMsg">Empieza por los expedientes en curso y los mensajes. El resultado aparece aquí.</p>
+      <dl id="rows" hidden>
+        <div class="row"><dt>Horas a la semana</dt><dd id="hWeek">—</dd></div>
+        <div class="row"><dt>Jornadas completas de 8 h al mes</dt><dd id="days8">—</dd></div>
+        <div class="row"><dt>Coste al mes</dt><dd id="costMonth">—</dd></div>
+        <div class="row"><dt>Coste al año</dt><dd id="costYear">—</dd></div>
+        <div class="row extra" id="rowWait" hidden><dt>Días de espera acumulados al mes en expedientes parados</dt><dd id="waitDays">—</dd></div>
+        <div class="row extra" id="rowCap" hidden><dt>Equivale al trabajo de</dt><dd id="capacity">—</dd></div>
+        <div class="row extra" id="rowFee" hidden><dt>Honorarios en expedientes que esperan papeles este mes</dt><dd id="feeWait">—</dd></div>
+      </dl>
+      <p class="note">Es una estimación hecha con tus datos, no una auditoría. Los cálculos se hacen en tu navegador: esta página no guarda ni envía tus números.</p>
+      <div class="actions">
+        <button class="btn btn-primary" type="button" id="copyBtn" disabled>Copiar mi resultado</button>
+        <p class="status" id="status" role="status"></p>
+        <textarea id="copyText" readonly hidden aria-label="Resumen del resultado para copiar"></textarea>
+      </div>
+    </aside>
+  </div>
+
+  <section class="after">
+    <div>
+      <h2>Qué hay detrás de esas horas</h2>
+      <p>Es trabajo necesario, pero repetitivo y sin dueño: lo hace quien tiene un hueco. Por eso se nota poco y se acumula.</p>
+    </div>
+    <div>
+      <h2>Qué puede hacer un sistema</h2>
+      <ul>
+        <li>Enviar a cada cliente la lista exacta de documentos de su trámite.</li>
+        <li>Recordarle solo lo que falta, sin que nadie del equipo escriba.</li>
+        <li>Avisar al despacho cuando un expediente lleva días parado, y por qué.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Lo que no cambia</h2>
+      <p><strong>Cada documento lo sigue validando tu equipo.</strong> El sistema reclama y avisa; no decide ni da consejo jurídico.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Demo de portfolio · sin datos reales: todo se calcula en el navegador</span>
+    <a href="../">← Volver al portfolio</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var ids=["exp","msg","minMsg","calls","minCall","stuck","minStuck","days","review","rate","hoursCase","fee"];
+  var $=function(id){return document.getElementById(id)};
+  function num(id){
+    var v=($(id).value||"").trim().replace(/\s/g,"").replace(",",".");
+    var n=parseFloat(v);
+    return isFinite(n)&&n>0?n:0;
+  }
+  function fmt(n,d){return n.toLocaleString("es-ES",{maximumFractionDigits:d==null?1:d,minimumFractionDigits:0})}
+  function eur(n){return n.toLocaleString("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0})}
+
+  function calc(){
+    var v={};ids.forEach(function(id){v[id]=num(id)});
+    var minutes=v.exp*v.msg*v.minMsg + v.exp*v.calls*v.minCall + v.stuck*v.minStuck + v.review*60*52/12;
+    var hMonth=minutes/60;
+    return {v:v,hMonth:hMonth,hWeek:hMonth*12/52,days8:hMonth/8,costMonth:hMonth*v.rate,costYear:hMonth*v.rate*12,
+      wait:v.stuck*v.days,cap:v.hoursCase>0?hMonth/v.hoursCase:0,feeWait:v.stuck*v.fee};
+  }
+
+  function render(){
+    var r=calc(), has=r.hMonth>0;
+    $("hoursMonth").firstChild.nodeValue=has?fmt(r.hMonth):"—";
+    $("rows").hidden=!has; $("emptyMsg").hidden=has; $("copyBtn").disabled=!has;
+    $("copyText").hidden=true; $("status").textContent="";
+    if(!has) return;
+    $("hWeek").textContent=fmt(r.hWeek)+" h";
+    $("days8").textContent=fmt(r.days8);
+    $("costMonth").textContent=r.v.rate?eur(r.costMonth):"Falta el coste por hora";
+    $("costYear").textContent=r.v.rate?eur(r.costYear):"—";
+    $("rowWait").hidden=!(r.wait>0); $("waitDays").textContent=fmt(r.wait,0)+" días";
+    $("rowCap").hidden=!(r.cap>0); $("capacity").textContent=fmt(r.cap)+(Math.abs(r.cap-1)<0.05?" expediente":" expedientes");
+    $("rowFee").hidden=!(r.feeWait>0); $("feeWait").textContent=eur(r.feeWait);
+  }
+
+  function summary(){
+    var r=calc(), L=[];
+    L.push("Mi resultado en la calculadora de horas del despacho:");
+    L.push("- "+fmt(r.hMonth)+" h al mes ("+fmt(r.hWeek)+" h a la semana) pidiendo, recordando y comprobando documentos");
+    if(r.v.rate) L.push("- Coste: "+eur(r.costMonth)+" al mes, "+eur(r.costYear)+" al año");
+    if(r.wait>0) L.push("- "+fmt(r.wait,0)+" días de espera acumulados al mes en expedientes parados");
+    if(r.cap>0) L.push("- Equivale al trabajo de "+fmt(r.cap)+" expedientes completos al mes");
+    if(r.feeWait>0) L.push("- "+eur(r.feeWait)+" de honorarios en expedientes que esperan papeles este mes");
+    L.push("Datos de partida: "+fmt(r.v.exp,0)+" expedientes en curso, "+fmt(r.v.stuck,0)+" parados al mes.");
+    return L.join("\n");
+  }
+
+  $("calc").addEventListener("input",render);
+  $("calc").addEventListener("submit",function(e){e.preventDefault()});
+  $("copyBtn").addEventListener("click",function(){
+    var text=summary(), ta=$("copyText");
+    function fallback(){ta.value=text;ta.hidden=false;ta.focus();ta.select();$("status").textContent="Selecciona el texto y cópialo."}
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){$("status").textContent="Copiado."},fallback);
+    } else fallback();
+  });
+  render();
+})();
+</script>
+</html>

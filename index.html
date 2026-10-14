@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Portfolio de automatización · Diana Pereira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap">
+<style>
+:root{--bg:#F5EFE6;--surface:#FFFDF9;--ink:#0A2540;--muted:#4F5D6E;--line:#E3D9C9;--gold:#A07830;
+  --display:"Playfair Display",Georgia,serif;--body:"EB Garamond",Garamond,Georgia,serif}
+@media (prefers-color-scheme: dark){:root{--bg:#071B30;--surface:#0D2640;--ink:#F5EFE6;--muted:#B9C4D0;--line:#1E3B5C;--gold:#D4A853;color-scheme:dark}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.15rem;line-height:1.55;margin:0}
+.wrap{max-width:52rem;margin:0 auto;padding:clamp(24px,6vw,64px) clamp(16px,4vw,40px)}
+.brand{font-weight:600;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+h1{font-family:var(--display);font-size:clamp(2rem,5vw,3rem);line-height:1.1;margin:.6rem 0 1rem}
+h1 em{font-weight:400;color:var(--gold)}
+p{color:var(--muted);margin:0 0 1rem}
+.cards{display:grid;gap:1rem;margin-top:2rem}
+a.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.3rem 1.4rem;color:inherit;text-decoration:none}
+a.card:hover,a.card:focus-visible{border-color:var(--gold);outline:none}
+a.card h2{font-family:var(--display);font-size:1.4rem;margin:0 0 .3rem}
+a.card p{margin:0}
+.tags{font-size:.9rem;color:var(--gold);margin-top:.5rem}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.95rem;color:var(--muted)}
+</style>
+<div class="wrap">
+  <div class="brand">Portfolio · Automatización para despachos profesionales</div>
+  <h1>Sistemas que hacen <em>el trabajo repetitivo</em></h1>
+  <p>Dos trabajos que se pueden probar aquí mismo. No contienen datos de nadie: todo se calcula o se simula en el navegador.</p>
+  <div class="cards">
+    <a class="card" href="calculadora-horas/">
+      <h2>Calculadora de horas del despacho</h2>
+      <p>El despacho mete sus propios números y ve cuántas horas y cuánto dinero dedica cada mes a pedir y recordar documentos.</p>
+      <div class="tags">HTML · CSS · JavaScript sin dependencias · accesible · modo oscuro</div>
+    </a>
+    <a class="card" href="respuesta-palabra-clave/">
+      <h2>Respuesta automática por palabra clave en Instagram</h2>
+      <p>Alguien comenta una palabra y el sistema responde en público, envía un mensaje privado, registra el contacto y avisa al equipo. Demo interactiva y documentación del flujo real.</p>
+      <div class="tags">GoHighLevel · Instagram · CRM · email</div>
+    </a>
+  </div>
+  <footer>Diana Pereira · autónoma en Madrid · código en este mismo repositorio</footer>
+</div>
+</html>
