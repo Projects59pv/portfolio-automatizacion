@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Seguimiento de compradores</title>
+<meta name="description" content="Mini CRM para un agente inmobiliario: a quién llamar hoy, quién lleva días sin noticias y qué mensaje enviarle.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: cabecera con resumen del día; formulario de alta/edición a la izquierda y lista filtrable a la derecha (una columna en móvil). */
+:root{
+  --bg:#F5EFE6; --surface:#FFFDF9; --ink:#0A2540; --muted:#4F5D6E; --line:#E3D9C9;
+  --gold:#A07830; --gold-fill:#D4A853; --focus:#D4A853;
+  --late:#A33A2B; --late-bg:#F7E3DE; --today:#7A5A12; --today-bg:#F6EBD0; --ok:#2F6B4F; --ok-bg:#E1EFE6;
+  --display:"Playfair Display", Georgia, "Times New Roman", serif;
+  --body:"EB Garamond", Garamond, Georgia, serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#071B30; --surface:#0D2640; --ink:#F5EFE6; --muted:#B9C4D0; --line:#1E3B5C;
+  --gold:#D4A853; --gold-fill:#D4A853;
+  --late:#F2A493; --late-bg:#3A1F24; --today:#F5D485; --today-bg:#33301F; --ok:#9FD6B8; --ok-bg:#163A33;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#071B30; --surface:#0D2640; --ink:#F5EFE6; --muted:#B9C4D0; --line:#1E3B5C;
+  --gold:#D4A853; --gold-fill:#D4A853;
+  --late:#F2A493; --late-bg:#3A1F24; --today:#F5D485; --today-bg:#33301F; --ok:#9FD6B8; --ok-bg:#163A33;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.1rem;line-height:1.5;margin:0}
+.wrap{max-width:72rem;margin:0 auto;padding-inline:clamp(16px,4vw,40px);padding-block:clamp(24px,5vw,56px)}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:600;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+header.hero{display:grid;gap:.8rem;max-width:46rem;margin-bottom:clamp(20px,4vw,32px)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,5.2vw,3.1rem);line-height:1.08;margin:0;text-wrap:balance}
+h1 em{font-weight:400;color:var(--gold)}
+.lede{margin:0;color:var(--muted);font-size:1.15rem}
+
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:.8rem;margin-bottom:clamp(24px,4vw,36px)}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.tile:hover,.tile[aria-pressed="true"]{border-color:var(--gold)}
+.tile .n{font-family:var(--display);font-weight:700;font-size:2rem;line-height:1;font-feature-settings:"lnum","tnum"}
+.tile .l{display:block;color:var(--muted);font-size:.95rem;margin-top:.3rem}
+.tile.late .n{color:var(--late)} .tile.today .n{color:var(--today)}
+
+.grid{display:grid;grid-template-columns:minmax(0,22rem) minmax(0,1fr);gap:clamp(20px,4vw,40px);align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.grid form{order:2}}
+
+form{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:clamp(16px,2.5vw,22px);display:grid;gap:.75rem;min-width:0}
+form h2,.list-head h2{font-family:var(--display);font-size:1.35rem;font-weight:600;margin:0}
+label{display:grid;gap:.25rem;font-weight:500;font-size:1rem;min-width:0}
+label small{font-weight:400;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.45rem .6rem;width:100%;min-width:0}
+textarea{min-height:4.5rem;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 30%,transparent)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.6rem}
+@media (max-width:420px){.two{grid-template-columns:minmax(0,1fr)}}
+
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:.4rem;font:inherit;font-size:1rem;font-weight:600;border-radius:6px;padding:.55rem .9rem;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.btn:hover{border-color:var(--gold)}
+.btn-primary{background:var(--gold-fill);border-color:var(--gold-fill);color:#0A2540}
+.btn-small{font-size:.92rem;padding:.3rem .6rem}
+.btn:focus-visible,a:focus-visible,.tile:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.row-btns{display:flex;flex-wrap:wrap;gap:.5rem}
+
+.list-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:.8rem;margin-bottom:.8rem}
+.filters{display:flex;flex-wrap:wrap;gap:.6rem;align-items:end}
+.filters label{font-size:.9rem}
+.filters input{width:12rem}
+ul.items{list-style:none;margin:0;padding:0;display:grid;gap:.7rem}
+li.item{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:.8rem 1rem;display:grid;gap:.4rem;min-width:0}
+li.item.late{border-left-color:var(--late)} li.item.today{border-left-color:var(--gold)}
+.item-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.3rem .8rem;align-items:baseline}
+.item-name{font-weight:600;font-size:1.15rem}
+.item-meta{color:var(--muted);font-size:.95rem;overflow-wrap:anywhere}
+.badges{display:flex;flex-wrap:wrap;gap:.35rem}
+.badge{font-size:.78rem;font-weight:600;letter-spacing:.04em;padding:.1rem .5rem;border-radius:999px;background:var(--bg);border:1px solid var(--line);white-space:nowrap}
+.badge.late{background:var(--late-bg);color:var(--late);border-color:transparent}
+.badge.today{background:var(--today-bg);color:var(--today);border-color:transparent}
+.badge.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.next{font-size:1rem}
+.next strong{font-weight:600}
+.empty{color:var(--muted);font-style:italic;margin:.5rem 0}
+
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:clamp(16px,3vw,24px);width:min(34rem,calc(100vw - 32px))}
+dialog::backdrop{background:rgb(0 0 0 / .45)}
+dialog h2{font-family:var(--display);font-size:1.3rem;margin:0 0 .6rem}
+#msgText{min-height:9rem}
+.status{min-height:1.3em;font-size:.92rem;color:var(--gold);margin:.4rem 0 0}
+
+section.after{margin-top:clamp(40px,6vw,64px);border-top:1px solid var(--line);padding-top:clamp(24px,4vw,36px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:clamp(20px,3vw,36px)}
+section.after h2{font-family:var(--display);font-size:1.4rem;font-weight:600;margin:0 0 .4rem}
+section.after p,section.after li{color:var(--muted);margin:0}
+section.after ul{margin:0;padding-left:1.1rem;display:grid;gap:.35rem}
+footer{margin-top:clamp(36px,5vw,56px);padding-top:1rem;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1.5rem;font-size:.95rem;color:var(--muted)}
+footer a{color:var(--gold)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="brand">
+      <svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><path d="M9 1 17 5.5v9L9 19 1 14.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      Demo de portfolio · Agentes inmobiliarios
+    </div>
+    <h1>¿A quién tienes que <em>llamar hoy</em>?</h1>
+    <p class="lede">Un seguimiento de compradores e inquilinos que sustituye la hoja compartida: qué toca hoy, quién lleva días sin noticias y qué mensaje enviarle. Los datos de ejemplo son inventados y todo se guarda solo en este navegador.</p>
+  </header>
+
+  <div class="summary" role="group" aria-label="Resumen y filtros rápidos">
+    <button class="tile late" type="button" data-quick="late" aria-pressed="false"><span class="n" id="nLate">0</span><span class="l">Con la próxima acción atrasada</span></button>
+    <button class="tile today" type="button" data-quick="today" aria-pressed="false"><span class="n" id="nToday">0</span><span class="l">Para hoy</span></button>
+    <button class="tile" type="button" data-quick="cold" aria-pressed="false"><span class="n" id="nCold">0</span><span class="l">Sin contacto hace 7 días o más</span></button>
+    <button class="tile" type="button" data-quick="all" aria-pressed="true"><span class="n" id="nActive">0</span><span class="l">Activos en total</span></button>
+  </div>
+
+  <div class="grid">
+    <form id="f" autocomplete="off">
+      <h2 id="formTitle">Nuevo contacto</h2>
+      <input type="hidden" id="id">
+      <label>Nombre<input id="name" required maxlength="60"></label>
+      <div class="two">
+        <label>Teléfono <small>(opcional)</small><input id="phone" inputmode="tel" maxlength="20"></label>
+        <label>Busca<select id="kind"><option>Compra</option><option>Alquiler</option></select></label>
+      </div>
+      <label>Inmueble o zona de interés<input id="property" maxlength="80" placeholder="Piso de 3 dormitorios en Chamberí"></label>
+      <div class="two">
+        <label>Presupuesto máximo <small>(€)</small><input id="budget" inputmode="numeric" maxlength="9"></label>
+        <label>Estado<select id="stage"></select></label>
+      </div>
+      <div class="two">
+        <label>Próxima acción<input id="nextAction" maxlength="80" placeholder="Llamar para cerrar visita"></label>
+        <label>Fecha<input id="nextDate" type="date"></label>
+      </div>
+      <label>Notas<textarea id="notes" maxlength="400"></textarea></label>
+      <div class="row-btns">
+        <button class="btn btn-primary" type="submit" id="saveBtn">Guardar</button>
+        <button class="btn" type="button" id="cancelBtn" hidden>Cancelar</button>
+      </div>
+      <label>Firmo los mensajes como<input id="agent" maxlength="40" placeholder="Tu nombre"></label>
+    </form>
+
+    <section aria-labelledby="listTitle">
+      <div class="list-head">
+        <h2 id="listTitle">Contactos</h2>
+        <div class="filters">
+          <label>Buscar<input id="q" type="search" placeholder="Nombre, zona, nota…"></label>
+          <label>Estado<select id="fStage"><option value="">Activos</option></select></label>
+        </div>
+      </div>
+      <p class="empty" id="empty" hidden>No hay contactos con estos filtros.</p>
+      <ul class="items" id="items"></ul>
+      <div class="row-btns" style="margin-top:1rem">
+        <button class="btn btn-small" type="button" id="csvBtn">Exportar a CSV</button>
+        <button class="btn btn-small" type="button" id="seedBtn">Cargar datos de ejemplo</button>
+        <button class="btn btn-small" type="button" id="clearBtn">Borrar todo</button>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <section class="after" aria-label="Sobre esta demo">
+    <div>
+      <h2>Qué resuelve</h2>
+      <p>En una hoja compartida nadie ve de un vistazo qué toca hoy ni quién se está enfriando. Aquí cada contacto tiene una próxima acción con fecha, y lo atrasado salta a la vista.</p>
+    </div>
+    <div>
+      <h2>Cómo está hecho</h2>
+      <ul>
+        <li>HTML, CSS y JavaScript sin dependencias.</li>
+        <li>Datos en el almacenamiento local del navegador; nada sale de tu equipo.</li>
+        <li>Exporta a CSV (separado por punto y coma, listo para Excel en español).</li>
+        <li>Mensajes de seguimiento según el estado, con enlace directo a WhatsApp si hay teléfono.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Versión real</h2>
+      <p>En un proyecto real, los contactos entrarían solos desde los portales o el formulario de la web, y el aviso de «para hoy» llegaría por email cada mañana.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Diana Pereira · demo de portfolio</span>
+    <a href="../">Volver al portfolio</a>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <h2 id="dlgTitle">Mensaje de seguimiento</h2>
+  <label class="sr" for="msgText">Texto del mensaje</label>
+  <textarea id="msgText"></textarea>
+  <div class="row-btns" style="margin-top:.8rem">
+    <button class="btn btn-primary" type="button" id="copyBtn">Copiar</button>
+    <a class="btn" id="waLink" target="_blank" rel="noopener" hidden>Abrir en WhatsApp</a>
+    <button class="btn" type="button" id="closeDlg">Cerrar</button>
+  </div>
+  <p class="status" id="dlgStatus" role="status" aria-live="polite"></p>
+</dialog>
+
+<script>
+(function(){
+  "use strict";
+  var STAGES=["Nuevo","Contactado","Visita agendada","Visitado","Oferta","Cerrado","Descartado"];
+  var CLOSED={"Cerrado":1,"Descartado":1};
+  var KEY="demo-seguimiento-compradores-v1", AKEY="demo-seguimiento-agente";
+  var $=function(id){return document.getElementById(id)};
+  var mem=null, quick="all";
+
+  function load(){
+    if(mem) return mem;
+    try{ var raw=localStorage.getItem(KEY); mem=raw?JSON.parse(raw):null; }catch(e){ mem=null; }
+    if(!Array.isArray(mem)) mem=null;
+    return mem;
+  }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(mem)); }catch(e){} }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function iso(d){ var z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+  function addDays(n){ var d=new Date(); d.setDate(d.getDate()+n); return iso(d); }
+  function today(){ return iso(new Date()); }
+  function daysSince(s){ if(!s) return null; return Math.round((new Date(today())-new Date(s))/86400000); }
+  function fmtDate(s){ if(!s) return ""; var p=s.split("-"); return p[2]+"/"+p[1]; }
+  function fmtEur(v){ var n=parseInt(String(v).replace(/\D/g,""),10); return isNaN(n)?"":n.toLocaleString("es-ES")+" €"; }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]}); }
+
+  function seed(){
+    mem=[
+      {id:uid(),name:"Marta G.",phone:"600 000 001",kind:"Compra",property:"Piso de 3 dormitorios en Chamberí",budget:"420000",stage:"Visita agendada",nextAction:"Recordar la visita",nextDate:addDays(0),lastContact:addDays(-2),notes:"Prefiere visitas por la tarde."},
+      {id:uid(),name:"Javier R.",phone:"600 000 002",kind:"Alquiler",property:"Estudio cerca de Moncloa",budget:"950",stage:"Contactado",nextAction:"Proponer dos visitas",nextDate:addDays(-2),lastContact:addDays(-9),notes:""},
+      {id:uid(),name:"Ana y Pablo",phone:"",kind:"Compra",property:"Ático con terraza, zona norte",budget:"610000",stage:"Visitado",nextAction:"Preguntar qué les pareció",nextDate:addDays(-1),lastContact:addDays(-4),notes:"Dudan entre dos áticos."},
+      {id:uid(),name:"Lucía M.",phone:"600 000 004",kind:"Compra",property:"Piso de 2 dormitorios en Arganzuela",budget:"330000",stage:"Oferta",nextAction:"Contarle la respuesta del propietario",nextDate:addDays(1),lastContact:addDays(-1),notes:"Oferta presentada a 315.000 €."},
+      {id:uid(),name:"Sergio P.",phone:"600 000 005",kind:"Alquiler",property:"Piso de 2 dormitorios en Usera",budget:"1100",stage:"Nuevo",nextAction:"Primera llamada",nextDate:addDays(0),lastContact:"",notes:"Entró por el formulario de la web."},
+      {id:uid(),name:"Elena V.",phone:"600 000 006",kind:"Compra",property:"Bajo con patio en Carabanchel",budget:"260000",stage:"Cerrado",nextAction:"",nextDate:"",lastContact:addDays(-15),notes:"Firmó arras."}
+    ];
+    save();
+  }
+
+  function flags(c){
+    var f={late:false,today:false,cold:false};
+    if(CLOSED[c.stage]) return f;
+    if(c.nextDate){ if(c.nextDate<today()) f.late=true; else if(c.nextDate===today()) f.today=true; }
+    var ds=daysSince(c.lastContact);
+    if(ds===null ? c.stage!=="Nuevo" : ds>=7) f.cold=true;
+    return f;
+  }
+
+  function message(c){
+    var first=(c.name||"").split(" ")[0]||"";
+    var agent=($("agent").value||"").trim();
+    var firma=agent?"\n\n"+agent:"";
+    var prop=c.property||"el inmueble";
+    switch(c.stage){
+      case "Nuevo": return "Hola, "+first+". Te escribo por tu interés en "+prop+". ¿Te viene bien que hablemos hoy o mañana para contarte los detalles?"+firma;
+      case "Contactado": return "Hola, "+first+". ¿Te apetece ver "+prop+" esta semana? Dime qué días te vienen mejor y te propongo dos horas."+firma;
+      case "Visita agendada": return "Hola, "+first+". Te recuerdo la visita a "+prop+(c.nextDate?" del "+fmtDate(c.nextDate):"")+". Si te surge algo, avísame y lo cambiamos."+firma;
+      case "Visitado": return "Hola, "+first+". ¿Qué te pareció "+prop+"? Si quieres verlo otra vez o que te enseñe opciones parecidas, me dices."+firma;
+      case "Oferta": return "Hola, "+first+". Te escribo para contarte cómo va tu oferta por "+prop+". ¿Tienes un momento para hablar?"+firma;
+      case "Cerrado": return "Hola, "+first+". Gracias de nuevo por la confianza. Si conoces a alguien que esté buscando, estaré encantada de ayudarle."+firma;
+      default: return "Hola, "+first+". Te escribo para saber si sigues buscando. Si cambian tus planes, aquí estoy."+firma;
+    }
+  }
+
+  function render(){
+    var list=load()||[];
+    var q=($("q").value||"").trim().toLowerCase();
+    var st=$("fStage").value;
+    var nLate=0,nToday=0,nCold=0,nActive=0;
+    list.forEach(function(c){ if(CLOSED[c.stage]) return; nActive++; var f=flags(c); if(f.late)nLate++; if(f.today)nToday++; if(f.cold)nCold++; });
+    $("nLate").textContent=nLate; $("nToday").textContent=nToday; $("nCold").textContent=nCold; $("nActive").textContent=nActive;
+
+    var rows=list.filter(function(c){
+      if(st){ if(c.stage!==st) return false; } else if(CLOSED[c.stage]) return false;
+      var f=flags(c);
+      if(quick==="late"&&!f.late) return false;
+      if(quick==="today"&&!f.today) return false;
+      if(quick==="cold"&&!f.cold) return false;
+      if(q){ var hay=[c.name,c.property,c.notes,c.nextAction,c.phone].join(" ").toLowerCase(); if(hay.indexOf(q)<0) return false; }
+      return true;
+    }).sort(function(a,b){ return (a.nextDate||"9999")<(b.nextDate||"9999")?-1:1; });
+
+    var ul=$("items"); ul.innerHTML="";
+    $("empty").hidden=rows.length>0;
+    rows.forEach(function(c){
+      var f=flags(c), ds=daysSince(c.lastContact);
+      var li=document.createElement("li");
+      li.className="item"+(f.late?" late":f.today?" today":"");
+      var b=['<span class="badge">'+esc(c.stage)+'</span>','<span class="badge">'+esc(c.kind)+'</span>'];
+      if(f.late) b.push('<span class="badge late">Atrasado</span>');
+      if(f.today) b.push('<span class="badge today">Hoy</span>');
+      if(f.cold) b.push('<span class="badge late">'+(ds===null?"Sin contactar":"Sin contacto hace "+ds+" días")+'</span>');
+      if(c.stage==="Cerrado") b.push('<span class="badge ok">Cerrado</span>');
+      li.innerHTML=
+        '<div class="item-top"><span class="item-name">'+esc(c.name)+'</span><div class="badges">'+b.join("")+'</div></div>'+
+        '<div class="item-meta">'+esc(c.property||"Sin inmueble indicado")+(c.budget?" · hasta "+esc(fmtEur(c.budget)):"")+(c.phone?" · "+esc(c.phone):"")+'</div>'+
+        (c.nextAction||c.nextDate?'<div class="next"><strong>Próximo paso:</strong> '+esc(c.nextAction||"(sin describir)")+(c.nextDate?" · "+esc(fmtDate(c.nextDate)):"")+'</div>':"")+
+        (c.notes?'<div class="item-meta">'+esc(c.notes)+'</div>':"")+
+        '<div class="row-btns"><button class="btn btn-small" type="button" data-act="msg">Mensaje</button><button class="btn btn-small" type="button" data-act="touch">Contactado hoy</button><button class="btn btn-small" type="button" data-act="edit">Editar</button></div>';
+      li.dataset.id=c.id;
+      ul.appendChild(li);
+    });
+  }
+
+  function resetForm(){
+    $("f").reset(); $("id").value=""; $("stage").value="Nuevo";
+    $("formTitle").textContent="Nuevo contacto"; $("saveBtn").textContent="Guardar"; $("cancelBtn").hidden=true;
+    try{ $("agent").value=localStorage.getItem(AKEY)||""; }catch(e){}
+  }
+  function fill(c){
+    ["id","name","phone","kind","property","budget","stage","nextAction","nextDate","notes"].forEach(function(k){ $(k).value=c[k]||""; });
+    $("formTitle").textContent="Editar contacto"; $("saveBtn").textContent="Guardar cambios"; $("cancelBtn").hidden=false;
+    $("name").focus();
+  }
+  function status(t){ $("status").textContent=t; }
+
+  STAGES.forEach(function(s){ $("stage").add(new Option(s,s)); $("fStage").add(new Option(s,s)); });
+
+  $("f").addEventListener("submit",function(e){
+    e.preventDefault();
+    var list=load()||(mem=[]);
+    var id=$("id").value, c=id?list.find(function(x){return x.id===id}):null;
+    var data={name:$("name").value.trim(),phone:$("phone").value.trim(),kind:$("kind").value,property:$("property").value.trim(),budget:$("budget").value.replace(/\D/g,""),stage:$("stage").value,nextAction:$("nextAction").value.trim(),nextDate:$("nextDate").value,notes:$("notes").value.trim()};
+    if(!data.name){ $("name").focus(); return; }
+    if(c){ Object.assign(c,data); status("Cambios guardados."); }
+    else { data.id=uid(); data.lastContact=""; list.push(data); status("Contacto añadido."); }
+    save(); resetForm(); render();
+  });
+  $("cancelBtn").addEventListener("click",function(){ resetForm(); });
+  $("agent").addEventListener("input",function(){ try{ localStorage.setItem(AKEY,this.value); }catch(e){} });
+
+  $("items").addEventListener("click",function(e){
+    var btn=e.target.closest("button[data-act]"); if(!btn) return;
+    var id=btn.closest("li").dataset.id, c=(load()||[]).find(function(x){return x.id===id}); if(!c) return;
+    var act=btn.dataset.act;
+    if(act==="edit") fill(c);
+    if(act==="touch"){ c.lastContact=today(); save(); render(); status("Contacto con "+c.name+" registrado hoy."); }
+    if(act==="msg"){
+      $("msgText").value=message(c); $("dlgStatus").textContent="";
+      var digits=(c.phone||"").replace(/\D/g,"");
+      var wa=$("waLink");
+      if(digits.length>=9){ var num=digits.length===9?"34"+digits:digits; wa.href="https://wa.me/"+num+"?text="+encodeURIComponent($("msgText").value); wa.hidden=false; }
+      else wa.hidden=true;
+      if($("dlg").showModal) $("dlg").showModal(); else $("dlg").setAttribute("open","");
+    }
+  });
+  $("msgText").addEventListener("input",function(){ var wa=$("waLink"); if(!wa.hidden) wa.href=wa.href.split("?")[0]+"?text="+encodeURIComponent(this.value); });
+  $("copyBtn").addEventListener("click",function(){
+    var t=$("msgText").value;
+    function done(){ $("dlgStatus").textContent="Copiado."; }
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,function(){ $("msgText").select(); document.execCommand("copy"); done(); });
+    else { $("msgText").select(); document.execCommand("copy"); done(); }
+  });
+  $("closeDlg").addEventListener("click",function(){ if($("dlg").close) $("dlg").close(); else $("dlg").removeAttribute("open"); });
+
+  document.querySelectorAll(".tile").forEach(function(t){
+    t.addEventListener("click",function(){
+      quick=t.dataset.quick;
+      document.querySelectorAll(".tile").forEach(function(x){ x.setAttribute("aria-pressed",String(x===t)); });
+      $("fStage").value=""; render();
+    });
+  });
+  $("q").addEventListener("input",render);
+  $("fStage").addEventListener("change",function(){ quick="all"; document.querySelectorAll(".tile").forEach(function(x){ x.setAttribute("aria-pressed",String(x.dataset.quick==="all")); }); render(); });
+
+  $("csvBtn").addEventListener("click",function(){
+    var list=load()||[];
+    if(!list.length){ status("No hay contactos que exportar."); return; }
+    var cols=[["name","Nombre"],["phone","Teléfono"],["kind","Busca"],["property","Inmueble o zona"],["budget","Presupuesto máximo"],["stage","Estado"],["nextAction","Próxima acción"],["nextDate","Fecha"],["lastContact","Último contacto"],["notes","Notas"]];
+    var q=function(v){ v=String(v==null?"":v); return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+    var csv="﻿"+cols.map(function(c){return c[1]}).join(";")+"\n"+list.map(function(r){ return cols.map(function(c){return q(r[c[0]])}).join(";"); }).join("\n");
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download="seguimiento-compradores-"+today()+".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    status("CSV descargado con "+list.length+" contactos.");
+  });
+  $("seedBtn").addEventListener("click",function(){ seed(); render(); status("Datos de ejemplo cargados (inventados)."); });
+  $("clearBtn").addEventListener("click",function(){ if(!confirm("¿Borrar todos los contactos de este navegador?")) return; mem=[]; save(); resetForm(); render(); status("Todo borrado."); });
+
+  if(!load()) seed();
+  resetForm(); render();
+})();
+</script>
+</html>
